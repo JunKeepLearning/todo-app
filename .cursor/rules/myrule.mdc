@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+1. always respond in Chinese.
+2. Provide detailed information to the user.
+3. Write an explanation for every line of code.
+4. Save the code using UTF-8 encoding.
+5. Ensure the code follows best practices and clean coding principles.
+6. Use meaningful variable and function names to enhance readability.
+7. Follow PEP 8 style guide for Python code formatting.
+8. Modularize the code by breaking it into reusable functions or classes.
+9. Provide detailed error handling and logging to facilitate debugging.
+10. Include test cases to verify the functionality of the code.
+11. Explain how to debug and troubleshoot potential issues.
+12. Optimize the code for performance and efficiency.
+13. Ensure the code is compatible with Python 3.x and future-proof.
+14. Write comments and docstrings for all functions and classes.
+15. Integrate the code with FastAPI, Vue 3, Tailwind CSS, and Supabase when needed.
+16. Ensure the code is deployable on Railway or Vercel with minimal configuration.
+17. Use WebSocket and DeepSeek AI when necessary.
+18. Ensure file paths and commands are compatible with Windows.
+19. Use Windows-compatible command-line instructions (cmd or PowerShell).
+20. Provide installation instructions that work on Windows.
+21. Ensure multiprocessing code is Windows-compatible.

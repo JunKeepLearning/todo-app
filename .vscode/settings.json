@@ -1,0 +1,6 @@
+{
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.autoImportCompletions": true,
+    "css.validate": false,
+    "tailwindCSS.emmetCompletions": true
+}
