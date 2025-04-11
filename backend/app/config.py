@@ -34,11 +34,10 @@ class Settings:
         self.DBNAME = os.getenv("dbname")
         
 settings = Settings()
-
+'''
 if __name__ == "__main__":
     print(settings.SUPABASE_URL)
     print(settings.SUPABASE_KEY)
     print(settings.DATABASE_URL)
     print(settings.DEBUG)
     print(settings.PROJECT_NAME)
-'''

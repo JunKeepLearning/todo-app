@@ -1,9 +1,11 @@
 // src/api.js
 import axios from 'axios';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL; // 从 .env 中读取变量
+// console.log('VITE_API_BASE_URL =', import.meta.env.VITE_API_BASE_URL);
 // 创建一个 Axios 实例
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // 后端 API 的基础 URL
+  baseURL: apiUrl, // 后端 API 的基础 URL
   timeout: 10000, // 设置超时
 });
 
