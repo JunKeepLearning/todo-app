@@ -26,6 +26,7 @@
     <!-- 路由视图 -->
     <main>
       <router-view></router-view>
+      <SpeedInsights />
     </main>
   </div>
 </template>
@@ -35,6 +36,7 @@
 import { computed , onMounted } from 'vue'; // 引入 Vue 的响应式 API
 import { useRouter } from 'vue-router'; // 引入 Vue Router
 import { useAuthStore } from './stores/auth';
+import { SpeedInsights } from "@vercel/speed-insights/vue" // 引入vercel的速度分析组件
 
 const authStore = useAuthStore();
 const isLoggedIn = computed(() => authStore.isAuthenticated);
