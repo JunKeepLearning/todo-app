@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Todos from '../views/Todos.vue';
+import Todos from '../views/TodoPage.vue';
 import Auth from '../views/Auth.vue';
 const routes = [
   { path: '/', component: Todos },

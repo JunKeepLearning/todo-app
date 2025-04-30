@@ -1,6 +1,6 @@
 from fastapi import FastAPI,Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.auth import router as auth_router
+# from backend.tests.auth import router as auth_router # 放在前端实现了
 from app.todo import router as todo_router
 import time
 from app.logger import setup_logger
@@ -20,7 +20,7 @@ app.add_middleware(
 
 # ---------------- 路由注册 ----------------
 # 导入并注册 auth 和 todo 模块的路由
-app.include_router(auth_router)
+# app.include_router(auth_router)
 app.include_router(todo_router)
 
 @app.get("/")

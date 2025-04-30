@@ -59,9 +59,7 @@ const logout = async () => {
 }
 
 onMounted(async () => {
-  if(isLoggedIn){
-    await authStore.initAuth();
-  }
+    await authStore.initAuth(); // 👈 页面加载时初始化用户状态
 });
 </script>
 

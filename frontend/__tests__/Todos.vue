@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, reactive } from 'vue';
-import { getTodoItems , createTodoItem , updateTodoItem , deleteTodoItem} from '../api';
+import { getTodoItems , createTodoItem , updateTodoItem , deleteTodoItem} from '../src/api';
 //存储展示列表
 const todolist = ref([]);
 //输入框值

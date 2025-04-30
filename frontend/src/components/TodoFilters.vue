@@ -1,0 +1,52 @@
+<!-- TodoFilters.vue -->
+<template>
+    <div class="filters">
+      <h2 class="text-xl font-bold text-white">筛选</h2>
+      <select 
+        :value="modelValuePriority" 
+        @change="emit('update:modelValuePriority', $event.target.value)">
+        <option value="">全部</option>
+        <option v-for="priority in priorityOptions" :key="priority" :value="priority">{{ priority }}</option>
+      </select>
+      <select 
+        :value="modelValueStatus" 
+        @change="emit('update:modelValueStatus', $event.target.value)">
+        <option value="">全部</option>
+        <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+      </select>
+    </div>
+  </template>
+  
+<script setup>
+import { ref } from 'vue';
+import { defineProps, defineEmits } from 'vue';
+
+// 绑定筛选条件
+const props = defineProps({
+  modelValuePriority: String,
+  modelValueStatus: String,
+});
+const emit = defineEmits(['update:modelValuePriority', 'update:modelValueStatus']);
+
+const priorityOptions = ref(['high', 'medium', 'low']);
+const statusOptions = ref(['未开始', '进行中', '已完成']);
+
+
+</script>
+  
+<style scoped>
+.filters {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    color: rgb(9, 8, 8);
+  }
+
+select {
+    padding: 8px;
+    border-radius: 5px;
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    color: black;
+  }
+</style>

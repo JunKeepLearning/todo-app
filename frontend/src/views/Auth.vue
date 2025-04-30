@@ -64,11 +64,11 @@ const togglePage = () =>{
 
 const handleLogin = async () => {
   // 处理登录逻辑
-  console.log(`登录中...邮箱: ${form.value.email}`); 
+  console.log(`登录中...邮箱: ${form.value.email}`);
   // console.log("form.value:"+JSON.stringify(form.value));
   // console.log(form.value);
-  
-  await authStore.login(form.value);
+  const { email, password } = form.value; // 解构出最新值
+  await authStore.login( email, password );
   if (authStore.isAuthenticated) {
     // 登录成功后跳转到首页
     router.push('/');
@@ -83,8 +83,9 @@ const handleRegister = async () => {
   console.log(`注册邮箱: ${form.value.email}`);
   // console.log("form.value:"+JSON.stringify(form.value));
   // console.log(form.value);
+  const { email, password } = form.value; // 解构出字符串
   // 调用注册接口
-  await authStore.register(form.value);
+  await authStore.register( email, password );
 
   if (authStore.isAuthenticated) {
     // 注册成功后跳转到登录页

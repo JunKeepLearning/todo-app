@@ -1,114 +1,159 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { userSignIn, userSignOut, userSignUp } from '../api'
+// stores/auth.js
+
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import {
+  userSignIn,
+  userSignOut,
+  userSignUp,
+  getCurrentUser,
+  refreshUserToken
+} from '../api'; // 自定义的 API 请求封装
+import { useTodoStore } from './todo';
+import { useErrorStore } from './error';
 
 export const useAuthStore = defineStore('auth', () => {
-  // 状态定义
-  const user = ref(null)
-  const token = ref(localStorage.getItem('token') || null)
-  
-  // 计算属性
-  const isAuthenticated = computed(() => !!token.value)
-  const currentUser = computed(() => user.value)
-  const authToken = computed(() => token.value)
+  // 当前登录用户对象
+  const user = ref(null);
 
-  // 设置用户和token（适配Supabase返回格式）
+  // token，从 localStorage 初始化（防止刷新丢失）
+  const token = ref(localStorage.getItem('token') || null);
+
+  // 引入错误信息存储
+  const errorStore = useErrorStore();
+
+  // 是否认证（只要 token 存在就认为是已登录）
+  const isAuthenticated = computed(() => !!token.value);
+
+  // 获取当前用户信息
+  const currentUser = computed(() => user.value);
+
+  // ✅ 设置用户认证信息
   const setAuthData = (responseData) => {
     if (!responseData?.access_token || !responseData?.user) {
-      throw new Error('无效的认证响应数据')
+      errorStore.setError('无效的认证响应数据');
+      throw new Error('无效的认证响应数据');
     }
 
-    // 提取关键数据
-    const { access_token, user: userData } = responseData
-    
-    // 标准化用户信息
+    const { access_token, user: userData } = responseData;
+
+    // 设置用户对象
     user.value = {
       id: userData.id,
       email: userData.email,
       emailVerified: userData.email_confirmed_at !== null,
-      metadata: userData.user_metadata
-    }
-    
-    token.value = access_token
-    localStorage.setItem('token', access_token)
-    localStorage.setItem('user', JSON.stringify(user.value))
-  }
+      metadata: userData.user_metadata,
+    };
 
-  // 登录方法（适配Supabase）
-  const login = async (credentials) => {
+    // 保存 token 和用户信息到 localStorage
+    token.value = access_token;
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(user.value));
+
+    // 保存 token 过期时间（假设你有从后端拿到 expires_at）
+    if (responseData.expires_at) {
+      localStorage.setItem('tokenExpiration', responseData.expires_at);
+    }
+  };
+
+  // ✅ 登录操作
+  const login = async (email, password) => {
     try {
-      const res = await userSignIn(credentials);
-      // console.log("credentials:   ",credentials);
-      console.log("完整登录响应:",res);
-      
-      setAuthData(res);
+      const res = await userSignIn(email, password);
+      setAuthData({
+        access_token: res.access_token,
+        user: res.user,
+        expires_at: res.expires_at,
+      });
+
+      // 登录成功后同步本地待办事项
+      const todoStore = useTodoStore();
+      await todoStore.syncLocalTodos();
+
       return true;
     } catch (error) {
-      console.error('登录失败:', {
-        error: error.response?.data || error.message,
-        request: credentials
-      });
-      throw error // 抛出错误供组件处理
+      errorStore.setError(`登录失败: ${error.message}`);
+      throw error;
     }
-  }
+  };
 
-  // 注册方法
-  const register = async (userData) => {
+  // ✅ 注册操作
+  const register = async (email, password) => {
     try {
-      const res = await userSignUp(userData)
-      // 注册后自动登录（根据业务需求决定）
-      if (res.data?.access_token) {
-        setAuthData(res.data)
+      const res = await userSignUp(email, password);
+      if (res) {
+        setAuthData({
+          access_token: res.access_token,
+          user: res.user,
+          expires_at: res.expires_at,
+        });
       }
-      return res.data
+      return res;
     } catch (error) {
-      console.error('注册失败:', error)
-      throw error
+      errorStore.setError(`注册失败: ${error.message}`);
+      throw error;
     }
-  }
+  };
 
-  // 登出方法
+  // ✅ 登出操作
   const logout = async () => {
     try {
-      await userSignOut()
+      await userSignOut();
     } finally {
-      // 无论API是否成功都清除本地状态
-      user.value = null
-      token.value = null
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      user.value = null;
+      token.value = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tokenExpiration');
     }
-  }
+  };
 
-  // 初始化时恢复用户状态
-  const initAuth = () => {
-    const storedToken = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('user')
-    
-    if (storedToken) {
-      token.value = storedToken
+  // ✅ 页面加载时刷新 token（防止 token 过期）
+  const refreshTokenOnPageLoad = async () => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    const tokenExpiration = localStorage.getItem('tokenExpiration');
+    const currentTime = Date.now();
+
+    if (storedToken && tokenExpiration && currentTime > parseInt(tokenExpiration)) {
+      console.log('Token 已过期，正在刷新...');
       try {
-        user.value = storedUser ? JSON.parse(storedUser) : null
-      } catch {
-        user.value = null
+        const refreshedSession = await refreshUserToken(); // 自定义刷新 API
+        token.value = refreshedSession.access_token;
+        localStorage.setItem('token', refreshedSession.access_token);
+        localStorage.setItem('tokenExpiration', refreshedSession.expires_at);
+        user.value = storedUser ? JSON.parse(storedUser) : null;
+      } catch (error) {
+        console.error('刷新 token 失败:', error);
+        user.value = null;
       }
     }
-  }
+  };
 
+  // ✅ 初始化函数：App 加载时调用
+  const initAuth = async () => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      token.value = storedToken;
+      user.value = JSON.parse(storedUser);
+    }
+
+    // 可选：尝试刷新过期 token
+    await refreshTokenOnPageLoad();
+  };
+
+  // ✅ 返回整个 Store 的响应式数据和方法
   return {
-    // 状态
     user,
     token,
-    
-    // 计算属性
     isAuthenticated,
     currentUser,
-    authToken,
-    
-    // 方法
     login,
     register,
     logout,
-    initAuth
-  }
-})
+    refreshTokenOnPageLoad,
+    initAuth, // 👈 记得暴露给组件使用
+  };
+});
