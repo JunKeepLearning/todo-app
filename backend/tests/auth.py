@@ -147,7 +147,7 @@ async def refresh_token(current_user=Depends(get_current_user)):
 if __name__ == "__main__":
     try:
         response = supabase.auth.sign_up({
-            "email": "workforvpn@163.com",
+            "email": "testworkforvpn@163.com",
             "password": "cnmbgcd1234",
         })
         print("注册成功:", response)
@@ -155,3 +155,5 @@ if __name__ == "__main__":
         print(f"注册失败: {str(e)}")
         if hasattr(e, 'response') and hasattr(e.response, 'json'):
             print(f"详细错误: {e.response.json()}")
+        else:
+            print("无法获取详细错误信息")
