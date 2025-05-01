@@ -72,7 +72,7 @@
   // 删除todo
   const handleRemove = async (id) => {
     try {
-      await todoStore.removeTodo(id);
+      await todoStore.deleteTodo(id);
       console.log('成功删除待办事项:', id);
     } catch (error) {
       handleError('删除失败，请重试', error);

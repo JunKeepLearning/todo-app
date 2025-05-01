@@ -4,6 +4,7 @@ import { getTodoItems, createTodoItem, updateTodoItem, deleteTodoItem } from '..
 import { ref } from 'vue'; // 引入 Vue 的 ref 响应式
 import { useAuthStore } from './auth'; // 引入认证 Store
 import { useErrorStore } from './error'; // 引入错误处理 Store
+import { v4 as uuidv4 } from 'uuid'; // 引入 UUID 库来生成唯一的 id
 
 // 创建一个名为 'todo' 的 Store
 export const useTodoStore = defineStore('todo', () => {
@@ -21,6 +22,10 @@ export const useTodoStore = defineStore('todo', () => {
       const localTodos = localStorage.getItem('todos'); // 取出本地存储的 todos
       if (localTodos) {
         todos.value = JSON.parse(localTodos); // 解析并赋值
+        console.log('成功加载本地数据: ', todos.value);
+      }
+      else {
+        console.log('本地没有数据。')
       }
     } catch (err) {
       errorStore.setError('加载本地待办事项失败！');
@@ -46,6 +51,7 @@ export const useTodoStore = defineStore('todo', () => {
     loading.value = true; // 开始加载
     try {
       todos.value = await getTodoItems(); // 从服务器拿数据
+      console.log('成功加载云端数据: ', todos.value)
     } catch (err) {
       errorStore.setError('获取待办事项失败！');
       console.error(err);
@@ -57,16 +63,20 @@ export const useTodoStore = defineStore('todo', () => {
   // 添加一个新的待办事项
   const addTodo = async (todo) => {
     if (!authStore.isAuthenticated) {
-      // 如果没登录，直接加到本地
-      todos.value.push(todo);
-      saveLocalTodos();
+      // 如果没登录，给待办事项生成一个唯一的 id
+      todo.id = uuidv4();  // 使用 UUID 生成唯一 id
+      todos.value.push(todo);  // 添加到本地待办列表
+      saveLocalTodos();  // 保存到 localStorage
+      console.log('待办事项已添加到本地: ', todo);
+      
       return;
     }
-
+  
     loading.value = true;
     try {
       const newTodo = await createTodoItem(todo); // 调 API 创建
-      todos.value.push(newTodo); // 加到列表
+      todos.value.push(newTodo); // 添加到待办列表
+      console.log('待办事项已添加到云端: ', newTodo);
     } catch (err) {
       errorStore.setError('添加待办事项失败！');
       console.error(err);
@@ -100,6 +110,8 @@ export const useTodoStore = defineStore('todo', () => {
   const deleteTodo = async (id) => {
     if (!authStore.isAuthenticated) {
       todos.value = todos.value.filter((todo) => todo.id !== id);
+      
+      console.log('待办事项已从本地删除: ', id);
       saveLocalTodos();
       return;
     }
@@ -108,6 +120,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       await deleteTodoItem(id);
       todos.value = todos.value.filter((todo) => todo.id !== id);
+      console.log('待办事项已从云端删除: ', id);
     } catch (err) {
       errorStore.setError('删除待办事项失败！');
       console.error(err);
@@ -122,6 +135,7 @@ export const useTodoStore = defineStore('todo', () => {
       if (index !== -1) {
         todos.value[index] = updatedTodo;
         saveLocalTodos();
+        console.log('待办事项已更新到本地: ', updatedTodo);
       }
       return;
     }
@@ -130,7 +144,10 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const result = await updateTodoItem(updatedTodo);
       const index = todos.value.findIndex((todo) => todo.id === result.id);
-      if (index !== -1) todos.value[index] = result;
+      if (index !== -1) {
+        todos.value[index] = result;
+        console.log('待办事项已更新到云端: ', result);
+      }
     } catch (err) {
       errorStore.setError('更新待办事项失败！');
       console.error(err);
