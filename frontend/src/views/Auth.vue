@@ -63,18 +63,18 @@ const togglePage = () =>{
 }
 
 const handleLogin = async () => {
-  // 处理登录逻辑
-  console.log(`登录中...邮箱: ${form.value.email}`);
-  // console.log("form.value:"+JSON.stringify(form.value));
-  // console.log(form.value);
-  const { email, password } = form.value; // 解构出最新值
-  await authStore.login( email, password );
-  if (authStore.isAuthenticated) {
-    // 登录成功后跳转到首页
-    router.push('/');
-  } else {
-    // 登录失败，显示错误信息
-    alert('登录失败，请检查您的邮箱和密码。');
+  try {
+    console.log(`登录中...邮箱: ${form.value.email}`);
+    const { email, password } = form.value; // 解构出最新值
+    await authStore.login(email, password);
+    if (authStore.isAuthenticated) {
+      router.push('/'); // 登录成功后跳转到首页
+    } else {
+      alert('登录失败，请检查您的邮箱和密码。');
+    }
+  } catch (error) {
+    console.error('登录过程中发生错误:', error);
+    alert('登录失败，请稍后重试。');
   }
 };
 

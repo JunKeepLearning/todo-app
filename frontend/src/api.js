@@ -91,9 +91,11 @@ export const userSignUp = async (email, password) => {
 
 // 用户登录
 export const userSignIn = async (email, password) => {
-  const { user, error } = await supabase.auth.signInWithPassword({ email, password }); // 使用 Supabase 的 auth.signInWithPassword 方法登录用户
-  if (error) throw error; // 如果发生错误，抛出错误
-  return user; // 返回登录的用户信息
+  const { session, user, error } = await supabase.auth.signInWithPassword({ email, password });
+  console.log('signInWithPassword response:', { session, user, error }); // 添加日志记录返回值
+  if (error) throw error;
+  if (!session) throw new Error('登录失败，未能获取有效的会话信息');
+  return { access_token: session.access_token, user }; // 返回包含 access_token 和 user 的对象
 };
 
 // 获取当前用户
@@ -110,7 +112,10 @@ export const userSignOut = async () => {
 
 // 刷新 token 方法
 export const refreshUserToken = async () => {
-  const { data, error } = await supabase.auth.refreshSession(); // 使用 Supabase 的 refreshSession 方法刷新 token
-  if (error) throw error; // 如果发生错误，抛出错误
-  return data.session; // 返回刷新后的 session
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error) throw error;
+  return {
+    access_token: data.session.access_token,
+    expires_at: data.session.expires_at
+  }; // 返回包含 access_token 和 expires_at 的对象
 };

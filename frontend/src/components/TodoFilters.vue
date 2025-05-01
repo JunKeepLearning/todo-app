@@ -2,17 +2,21 @@
 <template>
     <div class="filters">
       <h2 class="text-xl font-bold text-white">筛选</h2>
+      <p class="text-white">优先级</p>
       <select 
         :value="modelValuePriority" 
-        @change="emit('update:modelValuePriority', $event.target.value)">
+        @change="emit('update:modelValuePriority', $event.target.value)"
+        >
         <option value="">全部</option>
-        <option v-for="priority in priorityOptions" :key="priority" :value="priority">{{ priority }}</option>
+        <option v-for="priority in priorityOptions" :key="priority" :value="priority" class="text-black">{{ priority }}</option>
       </select>
+      <p  class="text-white">状态</p>
       <select 
         :value="modelValueStatus" 
-        @change="emit('update:modelValueStatus', $event.target.value)">
+        @change="emit('update:modelValueStatus', $event.target.value)"
+        >
         <option value="">全部</option>
-        <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+        <option v-for="status in statusOptions" :key="status" :value="status" class="text-black">{{ status }}</option>
       </select>
     </div>
   </template>

@@ -1,5 +1,5 @@
 <template>
-    <div class="todo-page p-4 max-w-3xl mx-auto">
+    <div class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-black to-purple-900 text-white font-sans m-0">
       <!-- 错误提示 -->
       <ErrorMessage v-if="errorStore.error" :message="errorStore.error" />
   
@@ -111,8 +111,5 @@
   </script>
   
   <style scoped>
-  .todo-page {
-    min-height: 100vh;
-    background: linear-gradient(to right, #ece9e6, #ffffff);
-  }
+
   </style>

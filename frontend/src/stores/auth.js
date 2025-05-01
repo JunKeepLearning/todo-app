@@ -66,14 +66,14 @@ export const useAuthStore = defineStore('auth', () => {
         expires_at: res.expires_at,
       });
 
-      // 登录成功后同步本地待办事项
       const todoStore = useTodoStore();
       await todoStore.syncLocalTodos();
 
       return true;
     } catch (error) {
       errorStore.setError(`登录失败: ${error.message}`);
-      throw error;
+      console.error('登录失败:', error);
+      return false; // 返回 false 表示登录失败
     }
   };
 

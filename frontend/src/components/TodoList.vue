@@ -1,6 +1,6 @@
 <!-- TodoList.vue -->
 <template>
-    <table class="todo-table">
+    <table class="todo-table w-full">
       <thead>
         <tr>
           <th v-for="col in columns" :key="col">{{ col }}</th>
