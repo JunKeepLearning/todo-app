@@ -50,8 +50,20 @@ api.interceptors.request.use(
 // --------------- CRUD 操作 --------------------------------
 // 获取所有待办项
 export const getTodoItems = async () => {
-  const response = await api.get('/todos'); // 向后端发送 GET 请求以获取待办项
-  return response.data; // 返回响应数据
+  try {
+    const response = await api.get('/todos'); // 向后端发送 GET 请求以获取待办项
+    console.log('getTodoItems - 响应状态:', response.status);
+    console.log('getTodoItems - 响应数据:', response.data);
+
+    if (!response.data || !Array.isArray(response.data.todos)) {
+      throw new Error('返回的数据格式不正确，期望是包含 todos 数组的对象');
+    }
+
+    return response.data.todos; // 返回 todos 数组
+  } catch (error) {
+    console.error('getTodoItems - 获取待办项失败:', error.message);
+    throw error; // 重新抛出错误以便调用方处理
+  }
 };
 
 // 创建待办项
@@ -69,6 +81,7 @@ export const createTodoItem = async (todo) => {
 // 更新待办项
 export const updateTodoItem = async (id, todo) => {
   const response = await api.patch(`/todos/${id}`, todo); // 向后端发送 PATCH 请求以更新指定 ID 的待办项
+  console.log('更新待办项响应:', response.data);
   return response.data; // 返回更新后的待办项数据
 };
 

@@ -28,7 +28,14 @@ export default {
       type: Object,
       required: true,
       validator(value) {
-        return ['id', 'title', 'priority', 'status', 'due_date'].every(k => k in value);
+        // 修改验证器逻辑，允许所有属性为空
+        return (
+          (value.id === undefined || typeof value.id === 'string') &&
+          (value.title === undefined || typeof value.title === 'string') &&
+          (value.priority === undefined || typeof value.priority === 'string') &&
+          (value.status === undefined || typeof value.status === 'string') &&
+          (value.due_date === undefined || value.due_date === null || typeof value.due_date === 'string')
+        );
       },
     },
   },

@@ -106,7 +106,7 @@ const submit = () => {
   if (!validateInput()) return;
 
   console.log('提交表单数据:', {
-    id: editingId.value,
+    id: editingId ? editingId.value : null,
     title: newTitle.value.trim(),
     priority: newPriority.value,
     status: newStatus.value,
@@ -114,7 +114,7 @@ const submit = () => {
   });
 
   emit('submit', {
-    id: editingId.value,
+    id: editingId ? editingId.value : null,
     title: newTitle.value.trim(),
     priority: newPriority.value,
     status: newStatus.value,

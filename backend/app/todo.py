@@ -4,6 +4,8 @@ from typing import Optional
 from app.client import supabase
 from app.logger import setup_logger
 from datetime import datetime
+from uuid import UUID
+
 logger = setup_logger(__name__)
 
 # 初始化 FastAPI 路由器
@@ -74,16 +76,19 @@ def create_todo(todo: TodoModel, user_id: str = get_user_id_header()):
         raise HTTPException(status_code=500, detail=f"创建待办事项失败: {str(e)}")
 # 更新todo
 @router.patch("/todos/{todo_id}")
-def update_todo(todo_id: int, todo: TodoModel, user_id: str = get_user_id_header()):
+def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = get_user_id_header()):
     """
     更新待办事项，根据配置决定是否筛选用户
     """
     try:
-        updates = {k: v for k, v in todo.model_dump().items() if v is not None}
+        updates = {
+            k: (v.isoformat() if isinstance(v, datetime) else v)
+            for k, v in todo.model_dump().items() if v is not None
+        }
         if not updates:
             raise HTTPException(status_code=400, detail="无更新内容")
 
-        query = supabase.table("todo_items").update(updates).eq("id", todo_id)
+        query = supabase.table("todo_items").update(updates).eq("id", str(todo_id))
         if not ALLOW_ALL_USERS:
             query = query.eq("user_id", user_id)
         response = query.execute()
@@ -95,15 +100,15 @@ def update_todo(todo_id: int, todo: TodoModel, user_id: str = get_user_id_header
         raise
     except Exception as e:
         logger.error(f"更新失败: {str(e)}")
-        raise HTTPException(status_code=500, detail="更新失败")
-# 删除todo
+        raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
+
 @router.delete("/todos/{todo_id}")
-def delete_todo(todo_id: int, user_id: str = get_user_id_header()):
+def delete_todo(todo_id: UUID, user_id: str = get_user_id_header()):
     """
     删除待办事项，根据配置决定是否筛选用户
     """
     try:
-        query = supabase.table("todo_items").delete().eq("id", todo_id)
+        query = supabase.table("todo_items").delete().eq("id", str(todo_id))
         if not ALLOW_ALL_USERS:
             query = query.eq("user_id", user_id)
         response = query.execute()

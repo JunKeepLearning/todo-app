@@ -29,7 +29,7 @@
         <TodoList 
           :todos="filteredTodos" 
           @delete="handleRemove" 
-          @update="handleUpdate" 
+          @update="id => setEditingTodoById(id)" 
         />
       </div>
     </div>
@@ -63,10 +63,21 @@
   // 处理添加待办
   const handleAdd = async (newTodo) => {
     try {
-      console.log('准备添加待办事项:', newTodo); // 打印待办事项数据
-      await todoStore.addTodo(newTodo);
+      if(editingTodo.value){
+        // 编辑模式
+        console.log("编辑中: ", editingTodo.value)
+        await todoStore.updateTodo(editingTodo.value.id, { ...newTodo });
+        console.log('更新----成功--待办事项:', newTodo);
+
+      } else {
+        // 新增模式
+        await todoStore.addTodo(newTodo);
+        console.log('添加----成功--待办事项:', newTodo); // 打印待办事项数据
+      }
     } catch (error) {
       handleError('添加失败，请重试', error);
+    } finally {
+      editingTodo.value = null;
     }
   };
   
@@ -74,20 +85,21 @@
   const handleRemove = async (id) => {
     try {
       await todoStore.deleteTodo(id);
-      console.log('成功删除待办事项:', id);
+      console.log('删除成功---待办事项:', id);
     } catch (error) {
       handleError('删除失败，请重试', error);
     }
   };
-  // 更新todo
-  const handleUpdate = async (updatedTodo) => {
-    try {
-      await todoStore.updateTodo(updatedTodo);
-      console.log('成功更新待办事项:', updatedTodo);
-    } catch (error) {
-      handleError('更新失败，请重试', error);
+
+
+  // 设置编辑中的待办事项--用于update
+  const setEditingTodoById = (id) => {
+    const todo = todoStore.todos.find(todo => todo.id === id);
+    if (todo) {
+      editingTodo.value = { ...todo };
     }
   };
+
   // 加载待办事项
   const loadTodos = async () => {
     loading.value = true;

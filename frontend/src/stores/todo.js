@@ -21,6 +21,7 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const localTodos = localStorage.getItem('todos');
       todos.value = Array.isArray(JSON.parse(localTodos)) ? JSON.parse(localTodos) : [];
+      console.log('本地的待办事项: ', todos.value);
     } catch (err) {
       errorStore.setError('加载本地待办事项失败！');
       console.error(err);
@@ -39,16 +40,24 @@ export const useTodoStore = defineStore('todo', () => {
   const fetchTodos = async () => {
     if (!authStore.isAuthenticated) {
       loadLocalTodos();
+      console.log("fetchTodos: 用户未登录，已加载本地待办事项");
       return;
     }
 
     loading.value = true;
     try {
       const fetchedTodos = await getTodoItems();
-      todos.value = Array.isArray(fetchedTodos) ? fetchedTodos : [];
+      console.log('fetchTodos - 从 getTodoItems 获取的原始数据:', fetchedTodos);
+
+      if (!Array.isArray(fetchedTodos)) {
+        throw new Error('fetchTodos - 获取的数据格式不正确，期望是数组');
+      }
+
+      todos.value = fetchedTodos;
+      console.log('fetchTodos - 更新后的待办事项:', todos.value);
     } catch (err) {
       errorStore.setError('获取待办事项失败！');
-      console.error(err);
+      console.error('fetchTodos - 错误信息:', err.message);
       todos.value = []; // 确保 todos 始终是数组
     } finally {
       loading.value = false;
@@ -61,7 +70,7 @@ export const useTodoStore = defineStore('todo', () => {
       // 如果没登录，给待办事项生成一个唯一的 id
       todo.id = uuidv4();  // 使用 UUID 生成唯一 id
       todos.value.push(todo);  // 添加到本地待办列表
-      saveLocalTodos();  // 保存到 localStorage
+      console.log("newTodo: ", todo);
       console.log('待办事项已添加到本地: ', todo);
       
       return;
@@ -70,6 +79,7 @@ export const useTodoStore = defineStore('todo', () => {
     loading.value = true;
     try {
       const newTodo = await createTodoItem(todo); // 调 API 创建
+      console.log("newTodo: ", newTodo);
       todos.value.push(newTodo); // 添加到待办列表
       console.log('待办事项已添加到云端: ', newTodo);
     } catch (err) {
@@ -105,7 +115,6 @@ export const useTodoStore = defineStore('todo', () => {
   const deleteTodo = async (id) => {
     if (!authStore.isAuthenticated) {
       todos.value = todos.value.filter((todo) => todo.id !== id);
-      
       console.log('待办事项已从本地删除: ', id);
       saveLocalTodos();
       return;
@@ -124,23 +133,26 @@ export const useTodoStore = defineStore('todo', () => {
     }
   };
   // 编辑
-  const updateTodo = async (updatedTodo) => {
+  const updateTodo = async (id, updatedTodo) => {
     if (!authStore.isAuthenticated) {
-      const index = todos.value.findIndex((todo) => todo.id === updatedTodo.id);
+      const index = todos.value.findIndex((todo) => todo.id === id);
       if (index !== -1) {
-        todos.value[index] = updatedTodo;
+        todos.value[index] = { ...todos.value[index], ...updatedTodo };
+        console.log("todos.value[index]: ", todos.value[index]);
         saveLocalTodos();
-        console.log('待办事项已更新到本地: ', updatedTodo);
+        console.log('待办事项已更新到本地: ', todos.value[index]);
       }
       return;
     }
-  
+
     loading.value = true;
     try {
-      const result = await updateTodoItem(updatedTodo);
+      console.log('开始更新后端');
+      const result = await updateTodoItem(id, updatedTodo); // 调用 API 更新后端数据
+      console.log('------待办事项更新结果: ', result);
       const index = todos.value.findIndex((todo) => todo.id === result.id);
       if (index !== -1) {
-        todos.value[index] = result;
+        todos.value[index] = result; // 同步更新本地数据
         console.log('待办事项已更新到云端: ', result);
       }
     } catch (err) {
