@@ -79,9 +79,8 @@ export const useTodoStore = defineStore('todo', () => {
     loading.value = true;
     try {
       const newTodo = await createTodoItem(todo); // 调 API 创建
-      console.log("newTodo: ", newTodo);
-      todos.value.push(newTodo); // 添加到待办列表
-      console.log('待办事项已添加到云端: ', newTodo);
+      todos.value.push(newTodo.todo); // 添加到待办列表
+      console.log('待办事项已添加到云端: ', newTodo.todo);
     } catch (err) {
       errorStore.setError('添加待办事项失败！');
       console.error(err);
@@ -147,14 +146,16 @@ export const useTodoStore = defineStore('todo', () => {
 
     loading.value = true;
     try {
-      console.log('开始更新后端');
       const result = await updateTodoItem(id, updatedTodo); // 调用 API 更新后端数据
       console.log('------待办事项更新结果: ', result);
-      const index = todos.value.findIndex((todo) => todo.id === result.id);
+      console.log("提取的ID: ", result.todo.id);
+      const index = todos.value.findIndex((todo) => todo.id === result.todo.id);
+      console.log("编辑的index: ", index);
       if (index !== -1) {
-        todos.value[index] = result; // 同步更新本地数据
-        console.log('待办事项已更新到云端: ', result);
+        todos.value[index] = result.todo; // 同步更新本地数据
+        console.log('待办事项已更新到云端后也同步到前端: ', result.todo);
       }
+
     } catch (err) {
       errorStore.setError('更新待办事项失败！');
       console.error(err);
