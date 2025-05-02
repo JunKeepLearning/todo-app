@@ -21,3 +21,6 @@ ENV/
 *.swo
 .cursor
 .vscode
+
+
+sql.md

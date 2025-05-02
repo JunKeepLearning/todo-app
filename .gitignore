@@ -1,2 +1,7 @@
 .vscode/
 .cursor/
+.vscode
+.cursor
+.vscode/*
+.cursor/*
+settings.json

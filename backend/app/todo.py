@@ -46,18 +46,32 @@ def create_todo(todo: TodoModel, user_id: str = get_user_id_header()):
     创建待办事项，始终关联到用户
     """
     try:
+        logger.debug(f"接收到的 user_id: {user_id}")  # 添加日志记录 user_id
+        if ALLOW_ALL_USERS:
+            user_id = None  # 明确设置为 None
+
+        if todo.due_date:
+            try:
+                todo.due_date = todo.due_date.isoformat()
+            except Exception:
+                raise HTTPException(status_code=400, detail="无效的日期格式，应为 ISO 8601 格式")
+
         new_todo = {
             "title": todo.title,
             "priority": todo.priority,
             "status": todo.status,
-            "due_date": todo.due_date.isoformat() if todo.due_date else None,
+            "due_date": todo.due_date,
             "user_id": user_id if not ALLOW_ALL_USERS else None
         }
+        logger.debug(f"创建待办事项数据: {new_todo}")  # 添加调试日志
         response = supabase.table("todo_items").insert(new_todo).execute()
+        logger.debug(f"Supabase 响应: {response}")
+        if not response.data:
+            raise HTTPException(status_code=400, detail="创建失败，可能是数据不符合约束条件")
         return {"todo": response.data[0]}
     except Exception as e:
         logger.error(f"创建失败: {str(e)}")
-        raise HTTPException(status_code=500, detail="创建待办事项失败")
+        raise HTTPException(status_code=500, detail=f"创建待办事项失败: {str(e)}")
 # 更新todo
 @router.patch("/todos/{todo_id}")
 def update_todo(todo_id: int, todo: TodoModel, user_id: str = get_user_id_header()):
@@ -117,10 +131,11 @@ def sync_todos(todos: list[TodoModel], user_id: str = get_user_id_header()):
                 "due_date": todo.due_date.isoformat() if todo.due_date else None,
                 "user_id": user_id if not ALLOW_ALL_USERS else None
             }
-            response = supabase.table("todo_items").upsert(new_todo).execute()
+            response = supabase.table("todo_items").upsert(new_todo, on_conflict=["title", "user_id"]).execute() # 添加 on_conflict 参数避免意外覆盖
             results.append(response.data)
 
         logger.info(f"批量同步成功: {len(results)} 条待办事项")
+        logger.debug(f"同步的待办事项详情: {results}") # 添加调试日志，避免敏感信息泄露
         return {"status": "success", "synced": len(results)}
     except Exception as e:
         logger.error(f"批量同步失败: {str(e)}")

@@ -30,42 +30,55 @@ export const useAuthStore = defineStore('auth', () => {
 
   // ✅ 设置用户认证信息
   const setAuthData = (responseData) => {
+    // 打印响应数据，检查其结构
+    console.log("setAuthData的参数: ", responseData);
+  
+    // 检查响应数据的有效性：必须包含 access_token 和 user
     if (!responseData?.access_token || !responseData?.user) {
       errorStore.setError('无效的认证响应数据');
       throw new Error('无效的认证响应数据');
     }
-
+  
+    // 从响应数据中提取 access_token 和 user 信息
     const { access_token, user: userData } = responseData;
-
+  
     // 设置用户对象
     user.value = {
-      id: userData.id,
-      email: userData.email,
-      emailVerified: userData.email_confirmed_at !== null,
-      metadata: userData.user_metadata,
+      id: userData.id, // 用户 ID
+      email: userData.email, // 用户邮箱
+      emailVerified: userData.email_confirmed_at !== null, // 判断邮箱是否已确认
+      metadata: userData.user_metadata, // 用户附加元数据
     };
-
-    // 保存 token 和用户信息到 localStorage
+  
+    // 保存 token 和用户信息到 localStorage，以便后续使用
     token.value = access_token;
     localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(user.value));
-
-    // 保存 token 过期时间（假设你有从后端拿到 expires_at）
+  
+    // 如果后端返回了 token 过期时间，则保存到 localStorage
     if (responseData.expires_at) {
       localStorage.setItem('tokenExpiration', responseData.expires_at);
     }
+  
+    // 可选：如果没有返回 expires_at，可以考虑手动设置过期时间（例如 1 小时后）
+    // 如果后端没有提供 token 过期时间，可以在这里设置一个默认的过期时间（如 3600 秒，即 1 小时）
+    // const expirationTime = 3600; // 过期时间 1 小时
+    // const expiresAt = Date.now() / 1000 + expirationTime;
+    // localStorage.setItem('tokenExpiration', expiresAt);
   };
+  
 
   // ✅ 登录操作
   const login = async (email, password) => {
     try {
       const res = await userSignIn(email, password);
+      // console.log("登录，返回的结果: ", res);
+      if(res){
       setAuthData({
         access_token: res.access_token,
-        user: res.user,
-        expires_at: res.expires_at,
+        user: res.user
       });
-
+      }
       const todoStore = useTodoStore();
       await todoStore.syncLocalTodos();
 
@@ -81,11 +94,11 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (email, password) => {
     try {
       const res = await userSignUp(email, password);
+      // console.log("注册，返回的结果: ", res);
       if (res) {
         setAuthData({
           access_token: res.access_token,
-          user: res.user,
-          expires_at: res.expires_at,
+          user: res.user
         });
       }
       return res;

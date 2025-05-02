@@ -6,6 +6,7 @@
       <select 
         :value="modelValuePriority" 
         @change="emit('update:modelValuePriority', $event.target.value)"
+        class="bg-white text-black border border-gray-300 rounded px-2 py-1"
         >
         <option value="">全部</option>
         <option v-for="priority in priorityOptions" :key="priority" :value="priority" class="text-black">{{ priority }}</option>
@@ -14,6 +15,7 @@
       <select 
         :value="modelValueStatus" 
         @change="emit('update:modelValueStatus', $event.target.value)"
+        class="bg-white text-black border border-gray-300 rounded px-2 py-1"
         >
         <option value="">全部</option>
         <option v-for="status in statusOptions" :key="status" :value="status" class="text-black">{{ status }}</option>

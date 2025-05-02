@@ -30,7 +30,8 @@ api.interceptors.request.use(
         localStorage.setItem('token', token); // 保存新的 token
         localStorage.setItem('tokenExpiration', refreshedSession.expires_at); // 更新过期时间
       } catch (error) {
-        console.error('刷新 token 失败:', error); // 刷新 token 失败时输出错误
+        console.error('刷新 token 失败:', error);
+        alert('身份验证失败，请重新登录。'); // 添加用户友好的错误提示
         throw new Error('无法刷新 token');
       }
     }
@@ -55,8 +56,14 @@ export const getTodoItems = async () => {
 
 // 创建待办项
 export const createTodoItem = async (todo) => {
-  const response = await api.post('/todos', todo); // 向后端发送 POST 请求以创建新的待办项
-  return response.data; // 返回创建的待办项数据
+  try {
+    console.log('api.js发送的待办项数据:', todo);
+    const response = await api.post('/todos', todo); // 向后端发送 POST 请求以创建新的待办项
+    return response.data; // 返回创建的待办项数据
+  } catch (error) {
+    console.error('创建待办项失败:', error.response?.data || error.message); // 打印后端返回的错误信息或错误消息
+    throw error; // 重新抛出错误以便调用方处理
+  }
 };
 
 // 更新待办项
@@ -72,35 +79,41 @@ export const deleteTodoItem = async (id) => {
 
 // 批量同步待办事项到 Supabase
 export const syncTodoItems = async (todos) => {
-  const response = await api.post('/todos/batch', { todos }); // 向后端发送批量同步请求
-  return response.data; // 返回同步结果
+  if (!Array.isArray(todos)) {
+    throw new Error('待办项数据无效：必须是数组。'); // 添加数据验证
+  }
+  const response = await api.post('/todos/batch', { todos });
+  return response.data;
 };
 
 // ------------------- AUTH ----------------------------
 // 用户注册
 export const userSignUp = async (email, password) => {
-  const { user, error } = await supabase.auth.signUp({ email, password }); // 使用 Supabase 的 auth.signUp 方法注册用户
+  const { data, error } = await supabase.auth.signUp({ email, password }); // 使用 Supabase 的 auth.signUp 方法注册用户
+  console.log('注册:', { data, error }); // 添加日志记录返回值
   if (error) throw error; // 如果发生错误，抛出错误
-  return user; // 返回注册的用户信息
+  return data.user; // 返回注册的用户信息
 };
 
 // 用户登录
 export const userSignIn = async (email, password) => {
-  const { session, user, error } = await supabase.auth.signInWithPassword({ email, password });
-  console.log('signInWithPassword response:', { session, user, error }); // 添加日志记录返回值
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  console.log('登录:', { data, error }); // 添加日志记录返回值
   if (error) throw error;
+  const { session, user } = data; // 确保从 data 中解构出 user
   if (!session) throw new Error('登录失败，未能获取有效的会话信息');
   return { access_token: session.access_token, user }; // 返回包含 access_token 和 user 的对象
 };
 
 // 获取当前用户
 export const getCurrentUser = () => {
-  return supabase.auth.user(); // 使用 Supabase 的 auth.user 方法获取当前登录的用户信息
+  return supabase.auth.getUser(); // 使用 Supabase 的 auth.user 方法获取当前登录的用户信息
 };
 
 // 用户登出
 export const userSignOut = async () => {
   const { error } = await supabase.auth.signOut(); // 使用 Supabase 的 auth.signOut 方法登出用户
+  console.log("已经登出...");
   if (error) throw error; // 如果发生错误，抛出错误
   return null; // 返回 null 表示用户已登出
 };
@@ -108,9 +121,14 @@ export const userSignOut = async () => {
 // 刷新 token 方法
 export const refreshUserToken = async () => {
   const { data, error } = await supabase.auth.refreshSession();
-  if (error) throw error;
+  if (error) {
+    console.error('刷新 token 失败:', error);
+    throw error;
+  }
+  console.log("token刷新成功...");
   return {
     access_token: data.session.access_token,
     expires_at: data.session.expires_at
   }; // 返回包含 access_token 和 expires_at 的对象
+
 };

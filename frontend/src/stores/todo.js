@@ -19,17 +19,12 @@ export const useTodoStore = defineStore('todo', () => {
   // 从 localStorage 加载本地的待办事项
   const loadLocalTodos = () => {
     try {
-      const localTodos = localStorage.getItem('todos'); // 取出本地存储的 todos
-      if (localTodos) {
-        todos.value = JSON.parse(localTodos); // 解析并赋值
-        console.log('成功加载本地数据: ', todos.value);
-      }
-      else {
-        console.log('本地没有数据。')
-      }
+      const localTodos = localStorage.getItem('todos');
+      todos.value = Array.isArray(JSON.parse(localTodos)) ? JSON.parse(localTodos) : [];
     } catch (err) {
       errorStore.setError('加载本地待办事项失败！');
       console.error(err);
+      todos.value = []; // 确保 todos 始终是数组
     }
   };
 
@@ -43,20 +38,20 @@ export const useTodoStore = defineStore('todo', () => {
   // 获取服务器上的待办事项（如果未登录，就加载本地的）
   const fetchTodos = async () => {
     if (!authStore.isAuthenticated) {
-      // 如果没登录，就加载本地待办
       loadLocalTodos();
       return;
     }
 
-    loading.value = true; // 开始加载
+    loading.value = true;
     try {
-      todos.value = await getTodoItems(); // 从服务器拿数据
-      console.log('成功加载云端数据: ', todos.value)
+      const fetchedTodos = await getTodoItems();
+      todos.value = Array.isArray(fetchedTodos) ? fetchedTodos : [];
     } catch (err) {
       errorStore.setError('获取待办事项失败！');
       console.error(err);
+      todos.value = []; // 确保 todos 始终是数组
     } finally {
-      loading.value = false; // 无论成功失败都结束 loading
+      loading.value = false;
     }
   };
 

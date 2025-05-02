@@ -38,3 +38,5 @@ if __name__ == "__main__":
         print(response.data)
     except Exception as e:
         print(f"获取待办事项失败: {str(e)}")
+    
+    register_user("test@example.com", "qwer1234")

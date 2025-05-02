@@ -63,6 +63,7 @@
   // 处理添加待办
   const handleAdd = async (newTodo) => {
     try {
+      console.log('准备添加待办事项:', newTodo); // 打印待办事项数据
       await todoStore.addTodo(newTodo);
     } catch (error) {
       handleError('添加失败，请重试', error);
@@ -102,7 +103,8 @@
   onMounted(loadTodos);
   
   const filteredTodos = computed(() => {
-    return todoStore.todos.filter(todo => {
+    const todos = Array.isArray(todoStore.todos) ? todoStore.todos : [];
+    return todos.filter(todo => {
       const priorityMatch = !filterPriority.value || todo.priority === filterPriority.value;
       const statusMatch = !filterStatus.value || todo.status === filterStatus.value;
       return priorityMatch && statusMatch;
