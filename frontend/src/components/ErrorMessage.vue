@@ -1,16 +1,19 @@
 <!-- src/components/ErrorMessage.vue -->
 <template>
-  <p v-if="errorMessage" class="error-message">
-    {{ errorMessage }}
+  <p v-if="message" class="error-message">
+    {{ message }}
   </p>
 </template>
 
 <script setup>
-import { useErrorStore } from '../stores/error';
-import { computed } from 'vue';
+import { defineProps } from 'vue';
 
-const errorStore = useErrorStore(); // 获取 Pinia store 实例
-const errorMessage = computed(() => errorStore.errorMessage); // 绑定错误消息
+defineProps({
+  message: {
+    type: String,
+    required: false,
+  },
+});
 </script>
 
 <style scoped>

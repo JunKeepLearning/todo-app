@@ -8,7 +8,7 @@
       class="input-box"
       id="title_input"
     />
-    
+        
     <!-- 优先级选择框 -->
     <select v-model="newPriority" class="select" id="priority_input">
       <option
@@ -19,7 +19,7 @@
         {{ priority }}
       </option>
     </select>
-
+    
     <!-- 状态选择框 -->
     <select v-model="newStatus" class="select" id="status_input">
       <option
@@ -30,7 +30,7 @@
         {{ status }}
       </option>
     </select>
-
+    
     <!-- 日期选择框 -->
     <input
       type="date"
@@ -38,7 +38,7 @@
       class="time-input"
       id="time_input"
     />
-
+    
     <!-- 提交按钮，根据是否为编辑状态显示不同文本 -->
     <button @click="submit" class="btn">
       {{ editingId ? '保存' : '添加' }}
@@ -85,27 +85,31 @@ const clearInput = () => {
 
 // 输入验证
 const validateInput = () => {
-  const errorMessages = {
+    const errorMessages = {
     emptyTitle: '请输入有效的待办事项',
     titleTooLong: '内容不能超过50个字符',
   };
 
   if (!newTitle.value.trim()) {
     errorStore.setError(errorMessages.emptyTitle);
+    console.log('Validation failed: empty title');
     return false;
   }
   if (newTitle.value.trim().length > 50) {
     errorStore.setError(errorMessages.titleTooLong);
+    console.log('Validation failed: title too long');
     return false;
   }
+  console.log('Validation passed.');
   return true;
 };
 
 // 提交按钮点击事件
 const submit = () => {
+  console.log('Submit button clicked.');
   if (!validateInput()) return;
 
-  console.log('提交表单数据:', {
+  console.log('Submitting data:', {
     id: editingId ? editingId.value : null,
     title: newTitle.value.trim(),
     priority: newPriority.value,

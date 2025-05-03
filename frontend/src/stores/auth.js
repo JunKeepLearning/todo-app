@@ -75,8 +75,8 @@ export const useAuthStore = defineStore('auth', () => {
       // console.log("登录，返回的结果: ", res);
       if(res){
       setAuthData({
-        access_token: res.access_token,
-        user: res.user
+          access_token: res.access_token,
+          user: res.user
       });
       }
       const todoStore = useTodoStore();

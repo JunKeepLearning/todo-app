@@ -1,8 +1,7 @@
 <template>
     <div class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-black to-purple-900 text-white font-sans m-0">
       <!-- 错误提示 -->
-      <ErrorMessage v-if="errorStore.error" :message="errorStore.error" />
-  
+      <ErrorMessage v-if="errorStore.errorMessage" :message="errorStore.errorMessage" />
       <!-- 加载中 -->
       <div v-if="loading" class="text-center py-8 text-gray-500">
         正在加载待办事项...
@@ -44,9 +43,12 @@
   import TodoFilters from '../components/TodoFilters.vue';
   import TodoList from '../components/TodoList.vue';
   import ErrorMessage from '../components/ErrorMessage.vue';
+  import { useAuthStore } from '../stores/auth';
+
   
   const todoStore = useTodoStore();
   const errorStore = useErrorStore();
+  const authStore = useAuthStore();
   
   const loading = ref(false);
   const editingTodo = ref(null);
@@ -57,22 +59,22 @@
   
   const handleError = (message, error) => {
     errorStore.setError(message);
-    console.error(message, error);
+    console.log('handleError called with message:', message, 'and error:', error);
   };
   
   // 处理添加待办
   const handleAdd = async (newTodo) => {
     try {
       if(editingTodo.value){
+        console.log("Editing todo:", editingTodo.value);
         // 编辑模式
-        console.log("编辑中: ", editingTodo.value)
         await todoStore.updateTodo(editingTodo.value.id, { ...newTodo });
-        console.log('更新----成功--待办事项:', newTodo);
+        console.log('Todo updated successfully:', newTodo);
 
       } else {
         // 新增模式
         await todoStore.addTodo(newTodo);
-        console.log('添加----成功--待办事项:', newTodo); // 打印待办事项数据
+        console.log('Todo added successfully:', newTodo); // 打印待办事项数据
       }
     } catch (error) {
       handleError('添加失败，请重试', error);
@@ -100,28 +102,42 @@
     }
   };
 
-  // 加载待办事项
-  const loadTodos = async () => {
-    loading.value = true;
-    try {
-      await todoStore.fetchTodos();
-    } catch (error) {
-      handleError('加载待办事项失败，请刷新重试', error);
-    } finally {
-      loading.value = false;
+  // 先加载，再 fetch（更推荐）
+const loadTodos = async () => {
+  loading.value = true;
+  try {
+    if (!authStore.isAuthenticated) {
+      await todoStore.fetchTodos(); // 如果未登录，仅加载本地数据
+    } else {
+      await todoStore.syncLocalTodos(); // 同步本地数据到远程
+      await todoStore.fetchTodos(); // 加载远程数据覆盖本地
     }
-  };
-  
-  onMounted(loadTodos);
-  
-  const filteredTodos = computed(() => {
-    const todos = Array.isArray(todoStore.todos) ? todoStore.todos : [];
-    return todos.filter(todo => {
-      const priorityMatch = !filterPriority.value || todo.priority === filterPriority.value;
-      const statusMatch = !filterStatus.value || todo.status === filterStatus.value;
-      return priorityMatch && statusMatch;
-    });
+  } catch (error) {
+    handleError('加载数据失败', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+
+  onMounted(() => {
+    console.log("authStore.isAuthenticated" , authStore.isAuthenticated);
+    console.log('Component mounted.');
+    loadTodos();
   });
+  // 筛选器
+  const filterTodos = (todos, priority, status) => {
+  return todos.filter(todo => {
+    const priorityMatch = !priority || todo.priority === priority;
+    const statusMatch = !status || todo.status === status;
+    return priorityMatch && statusMatch;
+  });
+};
+const filteredTodos = computed(() =>
+  filterTodos(todoStore.todos || [], filterPriority.value, filterStatus.value)
+);
+
   </script>
   
   <style scoped>

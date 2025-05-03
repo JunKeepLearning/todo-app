@@ -20,7 +20,8 @@ api.interceptors.request.use(
     let token = localStorage.getItem('token'); // 从 localStorage 中获取存储的 token
     const tokenExpiration = localStorage.getItem('tokenExpiration'); // 获取 token 的过期时间
     const currentTime = Date.now(); // 获取当前时间
-
+    console.log("config: ", config);
+    console.log("tokenExpiration: ", tokenExpiration);
     // 检查 token 是否过期，如果过期则尝试刷新 token
     if (token && tokenExpiration && currentTime > parseInt(tokenExpiration)) {
       console.log('Token 已过期，正在刷新...');
@@ -95,9 +96,16 @@ export const syncTodoItems = async (todos) => {
   if (!Array.isArray(todos)) {
     throw new Error('待办项数据无效：必须是数组。'); // 添加数据验证
   }
-  const response = await api.post('/todos/batch', { todos });
-  return response.data;
-};
+  
+  console.log('准备发送的 todos 数据:', todos);
+
+  try {
+    const response = await api.post('/todos/batch', todos);
+    console.log('批量同步成功:', response.data);
+  } catch (error) {
+    console.error('批量同步失败:', error.response?.data || error.message);
+  }
+}
 
 // ------------------- AUTH ----------------------------
 // 用户注册
@@ -111,11 +119,17 @@ export const userSignUp = async (email, password) => {
 // 用户登录
 export const userSignIn = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  console.log('登录:', { data, error }); // 添加日志记录返回值
+  // console.log('登录:', { data, error }); // 添加日志记录返回值
   if (error) throw error;
   const { session, user } = data; // 确保从 data 中解构出 user
   if (!session) throw new Error('登录失败，未能获取有效的会话信息');
-  return { access_token: session.access_token, user }; // 返回包含 access_token 和 user 的对象
+  return {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token, // 返回 refresh_token
+    expires_at: session.expires_at,       // 返回 expires_at
+    expires_in: session.expires_in,       // 返回 expires_in
+    user
+  }; // 返回包含 access_token 和 user 的对象
 };
 
 // 获取当前用户

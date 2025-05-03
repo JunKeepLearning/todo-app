@@ -1,6 +1,6 @@
 // todo.js
 import { defineStore } from 'pinia';  // 引入 Pinia 的 defineStore 用来创建 Store
-import { getTodoItems, createTodoItem, updateTodoItem, deleteTodoItem } from '../api';  // 引入 API 请求函数
+import { getTodoItems, createTodoItem, updateTodoItem, deleteTodoItem, syncTodoItems } from '../api';  // 引入 API 请求函数
 import { ref } from 'vue'; // 引入 Vue 的 ref 响应式
 import { useAuthStore } from './auth'; // 引入认证 Store
 import { useErrorStore } from './error'; // 引入错误处理 Store
@@ -14,7 +14,7 @@ export const useTodoStore = defineStore('todo', () => {
   const errorStore = useErrorStore(); // 错误处理 Store
   const authStore = useAuthStore(); // 认证（登录状态）Store
 
-  // ------------------ 工具函数 ------------------
+  // ------------------ 处理localstorage数据 ------------------
 
   // 从 localStorage 加载本地的待办事项
   const loadLocalTodos = () => {
@@ -72,37 +72,63 @@ export const useTodoStore = defineStore('todo', () => {
       todos.value.push(todo);  // 添加到本地待办列表
       console.log("newTodo: ", todo);
       console.log('待办事项已添加到本地: ', todo);
-      
       return;
     }
   
     loading.value = true;
     try {
       const newTodo = await createTodoItem(todo); // 调 API 创建
-      todos.value.push(newTodo.todo); // 添加到待办列表
+      // todos.value.push(newTodo.todo); // 添加到待办列表
       console.log('待办事项已添加到云端: ', newTodo.todo);
     } catch (err) {
       errorStore.setError('添加待办事项失败！');
       console.error(err);
     } finally {
       loading.value = false;
+      fetchTodos(); //刷新todos.value
     }
   };
 
   // 同步本地的待办事项到服务器（适合登录后同步）
   const syncLocalTodos = async () => {
     if (!authStore.isAuthenticated) return; // 没登录就不用同步
-
-    const localTodos = JSON.parse(localStorage.getItem('todos') || '[]');
+  
+    const localTodos = JSON.parse(JSON.stringify(todos.value));
+  
     if (localTodos.length === 0) return; // 没有待同步的就退出
-
+  
     loading.value = true;
     try {
-      for (const todo of localTodos) {
-        await createTodoItem(todo); // 把每一个本地待办推送到服务器
+      // 获取服务器上的待办事项
+      const serverTodos = await getTodoItems();
+      console.log('服务器上的待办事项:', serverTodos);
+  
+      // 过滤出本地新增或修改的待办事项
+      const todosToSync = localTodos.filter(localTodo => {
+        const matchingServerTodo = serverTodos.find(serverTodo => serverTodo.id === localTodo.id);
+        return (
+          !matchingServerTodo || // 本地新增的待办事项
+          JSON.stringify(matchingServerTodo) !== JSON.stringify(localTodo) // 本地修改的待办事项
+        );
+      });
+  
+      if (todosToSync.length === 0) {
+        console.log('没有需要同步的待办事项');
+        return;
       }
-      localStorage.removeItem('todos'); // 同步完清空本地待办
-      await fetchTodos(); // 重新拉取最新数据
+  
+      console.log('准备同步的待办事项:', todosToSync);
+  
+      // 调用批量同步 API
+      const syncedTodos = await syncTodoItems(todosToSync);
+      console.log('同步结果:', syncedTodos);
+  
+      // 清空本地存储
+      localStorage.removeItem('todos');
+      console.log('本地待办事项已同步到服务器并清除本地数据');
+  
+      // 重新获取后端数据
+      await fetchTodos();
     } catch (err) {
       errorStore.setError('同步待办事项失败！');
       console.error(err);

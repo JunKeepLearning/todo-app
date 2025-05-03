@@ -13,6 +13,7 @@ router = APIRouter(tags=["todo"])
 
 # -------------------- 数据模型定义 --------------------
 class TodoModel(BaseModel):
+    id: Optional[UUID] = None
     title: str
     priority: Optional[str] = None  # 例如 high / medium / low
     status: Optional[str] = None    # 例如 pending / completed
@@ -136,7 +137,7 @@ def sync_todos(todos: list[TodoModel], user_id: str = get_user_id_header()):
                 "due_date": todo.due_date.isoformat() if todo.due_date else None,
                 "user_id": user_id if not ALLOW_ALL_USERS else None
             }
-            response = supabase.table("todo_items").upsert(new_todo, on_conflict=["title", "user_id"]).execute() # 添加 on_conflict 参数避免意外覆盖
+            response = supabase.table("todo_items").upsert(new_todo, on_conflict=["id"]).execute() # 修改 on_conflict 参数为 id
             results.append(response.data)
 
         logger.info(f"批量同步成功: {len(results)} 条待办事项")
