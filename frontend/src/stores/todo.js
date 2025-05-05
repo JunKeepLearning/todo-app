@@ -172,19 +172,21 @@ export const useTodoStore = defineStore('todo', () => {
 
     loading.value = true;
     try {
+      console.log('更新待办事项请求数据:', id, updatedTodo); // 打印请求数据
       const result = await updateTodoItem(id, updatedTodo); // 调用 API 更新后端数据
-      console.log('------待办事项更新结果: ', result);
-      console.log("提取的ID: ", result.todo.id);
-      const index = todos.value.findIndex((todo) => todo.id === result.todo.id);
-      console.log("编辑的index: ", index);
-      if (index !== -1) {
-        todos.value[index] = result.todo; // 同步更新本地数据
-        console.log('待办事项已更新到云端后也同步到前端: ', result.todo);
-      }
+      console.log('更新待办事项成功:', result);
 
+      if (result?.todo) { // 检查 result 是否包含 todo
+        const index = todos.value.findIndex((todo) => todo.id === result.todo.id);
+        if (index !== -1) {
+          todos.value[index] = result.todo; // 同步更新本地数据
+        }
+      } else {
+        console.warn('更新待办事项返回的数据格式不正确:', result);
+      }
     } catch (err) {
       errorStore.setError('更新待办事项失败！');
-      console.error(err);
+      console.error('更新待办事项错误:', err.response || err.message);
     } finally {
       loading.value = false;
     }

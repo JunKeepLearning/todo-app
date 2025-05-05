@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 
 // ------------- 用于前端通过后端对supabase进行数据库操作 --------------
 import axios from 'axios';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 
 // 从环境变量中获取后端 API 的基础 URL
 const apiUrl = import.meta.env.VITE_API_BASE_URL; // 后端 API 的基础 URL
@@ -39,6 +40,7 @@ api.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`; // 如果 token 存在，添加到请求头中
+      console.log('Authorization Header:', config.headers.Authorization); // 打印 Authorization 头部
     }
 
     return config; // 返回修改后的配置
@@ -81,9 +83,21 @@ export const createTodoItem = async (todo) => {
 
 // 更新待办项
 export const updateTodoItem = async (id, todo) => {
-  const response = await api.patch(`/todos/${id}`, todo); // 向后端发送 PATCH 请求以更新指定 ID 的待办项
-  console.log('更新待办项响应:', response.data);
-  return response.data; // 返回更新后的待办项数据
+  if (!validateUUID(id)) {
+    throw new Error(`无效的 UUID: ${id}`); // 检查 id 是否为有效的 UUID
+  }
+
+  try {
+    const response = await api.patch(`/todos/${id}`, {
+      ...todo,
+      id: id.toString() // 确保 UUID 是字符串格式
+    });
+    console.log('更新待办项响应:', response.data);
+    return response.data; // 返回更新后的待办项数据
+  } catch (error) {
+    console.error('更新待办项失败:', error.response?.data || error.message); // 打印详细错误信息
+    throw error; // 重新抛出错误以便调用方处理
+  }
 };
 
 // 删除待办项

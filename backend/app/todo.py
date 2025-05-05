@@ -5,9 +5,10 @@ from app.client import supabase
 from app.logger import setup_logger
 from datetime import datetime
 from uuid import UUID
+from app.auth import get_user_id_by_token # 根据token获取user_id
 
+# --------------- 初始化 ----------------
 logger = setup_logger(__name__)
-
 # 初始化 FastAPI 路由器
 router = APIRouter(tags=["todo"])
 
@@ -19,12 +20,17 @@ class TodoModel(BaseModel):
     status: Optional[str] = None    # 例如 pending / completed
     due_date: Optional[datetime] = None  # ISO 格式的日期字符串
 
-# ------------ 参数管理 --------------------------
+# ------------------ 参数管理 --------------------------
 # True: 用户可以看所有人的数据, False: 用户只能看自己的数据
 ALLOW_ALL_USERS = True  
 # 根据ALLOW_ALL_USERS去确认是否需要user_id
 def get_user_id_header():
-    return Header(None) if ALLOW_ALL_USERS else Header(...)
+    if ALLOW_ALL_USERS:
+        return None
+    authorization = Header(...)
+    if isinstance(authorization, Header):
+        authorization = authorization.value  # 提取 Header 的值
+    return get_user_id_by_token(authorization)
 
 # -------------------- API 接口 --------------------
 # 获取所有todo
@@ -83,7 +89,7 @@ def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = get_user_id_heade
     """
     try:
         updates = {
-            k: (v.isoformat() if isinstance(v, datetime) else v)
+            k: (v.isoformat() if isinstance(v, datetime) else str(v) if isinstance(v, UUID) else v)
             for k, v in todo.model_dump().items() if v is not None
         }
         if not updates:
@@ -102,7 +108,7 @@ def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = get_user_id_heade
     except Exception as e:
         logger.error(f"更新失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
-
+# 删除todo
 @router.delete("/todos/{todo_id}")
 def delete_todo(todo_id: UUID, user_id: str = get_user_id_header()):
     """
