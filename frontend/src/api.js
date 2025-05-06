@@ -21,8 +21,11 @@ api.interceptors.request.use(
     let token = localStorage.getItem('token'); // 从 localStorage 中获取存储的 token
     const tokenExpiration = localStorage.getItem('tokenExpiration'); // 获取 token 的过期时间
     const currentTime = Date.now(); // 获取当前时间
-    console.log("config: ", config);
-    console.log("tokenExpiration: ", tokenExpiration);
+
+    console.log("当前时间戳:", currentTime);
+    console.log("Token:", token);
+    console.log("Token 过期时间:", tokenExpiration);
+
     // 检查 token 是否过期，如果过期则尝试刷新 token
     if (token && tokenExpiration && currentTime > parseInt(tokenExpiration)) {
       console.log('Token 已过期，正在刷新...');
@@ -31,6 +34,8 @@ api.interceptors.request.use(
         token = refreshedSession?.access_token; // 获取新的 token
         localStorage.setItem('token', token); // 保存新的 token
         localStorage.setItem('tokenExpiration', refreshedSession.expires_at); // 更新过期时间
+        console.log("刷新后的 Token:", token);
+        console.log("刷新后的 Token 过期时间:", refreshedSession.expires_at);
       } catch (error) {
         console.error('刷新 token 失败:', error);
         alert('身份验证失败，请重新登录。'); // 添加用户友好的错误提示
@@ -40,12 +45,15 @@ api.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`; // 如果 token 存在，添加到请求头中
-      console.log('Authorization Header:', config.headers.Authorization); // 打印 Authorization 头部
+      // console.log('Authorization Header:', config.headers.Authorization); // 打印 Authorization 头部
+    } else {
+      console.warn("未找到有效的 Token，未设置 Authorization 头部");
     }
 
     return config; // 返回修改后的配置
   },
   (error) => {
+    console.error("请求拦截器出错:", error);
     return Promise.reject(error); // 如果请求拦截器出错，返回错误
   }
 );
@@ -124,10 +132,15 @@ export const syncTodoItems = async (todos) => {
 // ------------------- AUTH ----------------------------
 // 用户注册
 export const userSignUp = async (email, password) => {
-  const { data, error } = await supabase.auth.signUp({ email, password }); // 使用 Supabase 的 auth.signUp 方法注册用户
-  console.log('注册:', { data, error }); // 添加日志记录返回值
-  if (error) throw error; // 如果发生错误，抛出错误
-  return data.user; // 返回注册的用户信息
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  console.log('注册:', { data, error });
+
+  // 如果发生错误但用户已成功注册，返回数据而不是抛出错误
+  if (error && !data.user) {
+    throw error;
+  }
+
+  return data; // 返回注册的用户信息
 };
 
 // 用户登录

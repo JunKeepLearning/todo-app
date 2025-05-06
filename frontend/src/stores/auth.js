@@ -1,5 +1,4 @@
 // stores/auth.js
-
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import {
@@ -23,7 +22,10 @@ export const useAuthStore = defineStore('auth', () => {
   const errorStore = useErrorStore();
 
   // 是否认证（只要 token 存在就认为是已登录）
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => {
+    // console.log("authStore.isAuthenticated: ", !!token.value);
+    return !!token.value;
+  });
 
   // 获取当前用户信息
   const currentUser = computed(() => user.value);
@@ -94,17 +96,26 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (email, password) => {
     try {
       const res = await userSignUp(email, password);
-      // console.log("注册，返回的结果: ", res);
-      if (res) {
+      console.log('注册接口返回的数据:', res);
+
+      // 检查返回的结果是否包含 user
+      if (res?.user) {
         setAuthData({
-          access_token: res.access_token,
-          user: res.user
+          access_token: res.session?.access_token || null, // 如果 session 存在则获取 access_token
+          user: {
+            id: res.user.id,
+            email: res.user.email,
+            emailVerified: res.user.email_confirmed_at !== null,
+            metadata: res.user.user_metadata,
+          },
         });
       }
+
       return res;
     } catch (error) {
       errorStore.setError(`注册失败: ${error.message}`);
-      throw error;
+      console.error('注册失败:', error);
+      return null; // 返回 null 表示注册失败
     }
   };
 

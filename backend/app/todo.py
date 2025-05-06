@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel
 from typing import Optional
 from app.client import supabase
@@ -6,11 +6,23 @@ from app.logger import setup_logger
 from datetime import datetime
 from uuid import UUID
 from app.auth import get_user_id_by_token # 根据token获取user_id
-
+from app.config import settings
 # --------------- 初始化 ----------------
 logger = setup_logger(__name__)
 # 初始化 FastAPI 路由器
 router = APIRouter(tags=["todo"])
+
+# ------------------ 参数管理 --------------------------
+# True: 用户可以看所有人的数据, False: 用户只能看自己的数据
+ALLOW_ALL_USERS = settings.ALLOW_ALL_USERS  
+# 根据ALLOW_ALL_USERS去确认是否需要user_id
+def get_user_id_header(authorization: str = Header(...)):
+    if ALLOW_ALL_USERS:
+        return None
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="无效的授权头")
+    token = authorization.replace("Bearer ", "")
+    return get_user_id_by_token(token)
 
 # -------------------- 数据模型定义 --------------------
 class TodoModel(BaseModel):
@@ -20,22 +32,10 @@ class TodoModel(BaseModel):
     status: Optional[str] = None    # 例如 pending / completed
     due_date: Optional[datetime] = None  # ISO 格式的日期字符串
 
-# ------------------ 参数管理 --------------------------
-# True: 用户可以看所有人的数据, False: 用户只能看自己的数据
-ALLOW_ALL_USERS = True  
-# 根据ALLOW_ALL_USERS去确认是否需要user_id
-def get_user_id_header():
-    if ALLOW_ALL_USERS:
-        return None
-    authorization = Header(...)
-    if isinstance(authorization, Header):
-        authorization = authorization.value  # 提取 Header 的值
-    return get_user_id_by_token(authorization)
-
 # -------------------- API 接口 --------------------
 # 获取所有todo
 @router.get("/todos")
-def get_todos(user_id: str = get_user_id_header()):
+def get_todos(user_id: str = Depends(get_user_id_header)):
     """
     获取待办事项，根据配置决定是否筛选用户
     """
@@ -50,7 +50,7 @@ def get_todos(user_id: str = get_user_id_header()):
         raise HTTPException(status_code=500, detail="无法获取待办事项")
 # 新增todo
 @router.post("/todos")
-def create_todo(todo: TodoModel, user_id: str = get_user_id_header()):
+def create_todo(todo: TodoModel, user_id: str = Depends(get_user_id_header)):
     """
     创建待办事项，始终关联到用户
     """
@@ -83,7 +83,7 @@ def create_todo(todo: TodoModel, user_id: str = get_user_id_header()):
         raise HTTPException(status_code=500, detail=f"创建待办事项失败: {str(e)}")
 # 更新todo
 @router.patch("/todos/{todo_id}")
-def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = get_user_id_header()):
+def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = Depends(get_user_id_header)):
     """
     更新待办事项，根据配置决定是否筛选用户
     """
@@ -110,7 +110,7 @@ def update_todo(todo_id: UUID, todo: TodoModel, user_id: str = get_user_id_heade
         raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
 # 删除todo
 @router.delete("/todos/{todo_id}")
-def delete_todo(todo_id: UUID, user_id: str = get_user_id_header()):
+def delete_todo(todo_id: UUID, user_id: str = Depends(get_user_id_header)):
     """
     删除待办事项，根据配置决定是否筛选用户
     """
@@ -129,7 +129,7 @@ def delete_todo(todo_id: UUID, user_id: str = get_user_id_header()):
         raise HTTPException(status_code=500, detail="删除失败")
 # 同步todo
 @router.post("/todos/batch")
-def sync_todos(todos: list[TodoModel], user_id: str = get_user_id_header()):
+def sync_todos(todos: list[TodoModel], user_id: str = Depends(get_user_id_header)):
     """
     批量同步待办事项，始终关联到用户
     """

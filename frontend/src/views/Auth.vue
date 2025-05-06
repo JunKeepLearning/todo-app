@@ -80,22 +80,25 @@ const handleLogin = async () => {
 
 // 处理注册逻辑
 const handleRegister = async () => {
-  console.log(`注册邮箱: ${form.value.email}`);
-  // console.log("form.value:"+JSON.stringify(form.value));
-  // console.log(form.value);
-  const { email, password } = form.value; // 解构出字符串
-  // 调用注册接口
-  await authStore.register( email, password );
+  try {
+    console.log(`注册邮箱: ${form.value.email}`);
+    const { email, password } = form.value; // 解构出字符串
 
-  if (authStore.isAuthenticated) {
-    // 注册成功后跳转到登录页
-    currentPage.value='login';
-    form.value.email=form.value.email;
-    form.value.password=form.value.password;
-    console.log("注册成功，跳转到登录页");
-  } else {
-    // 登录失败，显示错误信息
-    alert('注册失败，请检查您的邮箱和密码。');
+    // 调用注册接口
+    await authStore.register(email, password);
+    console.log("token.value: ", authStore.token);
+    console.log("authStore.isAuthenticated: ", authStore.isAuthenticated);
+    if (authStore.isAuthenticated) {
+      // 注册成功后跳转到登录页
+      currentPage.value = 'login';
+      form.value.password = ''; // 清空密码字段
+      console.log("注册成功，跳转到登录页");
+    } else {
+      alert('注册失败，请检查您的邮箱和密码。');
+    }
+  } catch (error) {
+    console.error('注册过程中发生错误:', error);
+    alert('注册失败，请稍后重试。');
   }
 };
 

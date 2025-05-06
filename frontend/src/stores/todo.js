@@ -70,11 +70,12 @@ export const useTodoStore = defineStore('todo', () => {
       // 如果没登录，给待办事项生成一个唯一的 id
       todo.id = uuidv4();  // 使用 UUID 生成唯一 id
       todos.value.push(todo);  // 添加到本地待办列表
+      saveLocalTodos(); // 保存到 localStorage
       console.log("newTodo: ", todo);
       console.log('待办事项已添加到本地: ', todo);
       return;
     }
-  
+
     loading.value = true;
     try {
       const newTodo = await createTodoItem(todo); // 调 API 创建
