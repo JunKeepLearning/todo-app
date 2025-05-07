@@ -23,7 +23,7 @@ api.interceptors.request.use(
     const currentTime = Date.now(); // 获取当前时间
 
     console.log("当前时间戳:", currentTime);
-    console.log("Token:", token);
+    console.log("Token:", token ? true : false);
     console.log("Token 过期时间:", tokenExpiration);
 
     // 检查 token 是否过期，如果过期则尝试刷新 token
@@ -34,7 +34,7 @@ api.interceptors.request.use(
         token = refreshedSession?.access_token; // 获取新的 token
         localStorage.setItem('token', token); // 保存新的 token
         localStorage.setItem('tokenExpiration', refreshedSession.expires_at); // 更新过期时间
-        console.log("刷新后的 Token:", token);
+        // console.log("刷新后的 Token:", token);
         console.log("刷新后的 Token 过期时间:", refreshedSession.expires_at);
       } catch (error) {
         console.error('刷新 token 失败:', error);
