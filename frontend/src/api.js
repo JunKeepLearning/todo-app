@@ -12,7 +12,7 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL; // 后端 API 的基础 URL
 // 创建一个 Axios 实例，用于与后端通信
 const api = axios.create({
   baseURL: apiUrl, // 设置后端 API 的基础 URL
-  timeout: 10000, // 设置请求超时时间为 10 秒
+  timeout: 20000, // 设置请求超时时间为 20 秒
 });
 
 // 请求拦截器：在每次请求中自动添加 Authorization 头部
